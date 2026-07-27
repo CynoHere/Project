@@ -1,3 +1,6 @@
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.InputMismatchException;
 import java.util.Scanner;
@@ -29,12 +32,18 @@ public class Main {
                 case 2:
                     listStudents();
                     break;
+                case 3:
+                    searchStudents();
+                    break;
+                case 4:
+                    exportToCsv();
+                    break;
                 case 0:
                     System.out.println("Goodbye!");
                     running = false;
                     break;
                 default:
-                    System.out.println("Invalid option. Please choose 0, 1, or 2.");
+                    System.out.println("Invalid option. Please choose 0, 1, 2, 3, or 4.");
             }
         }
 
@@ -49,6 +58,8 @@ public class Main {
         System.out.println("=====================================");
         System.out.println("1. Add new student");
         System.out.println("2. List all students");
+        System.out.println("3. Search for a student");
+        System.out.println("4. Export to CSV");
         System.out.println("0. Exit");
         System.out.print("Choose an option: ");
     }
@@ -92,6 +103,83 @@ public class Main {
         System.out.println("\n--- Current Students (" + students.size() + ") ---");
         for (Student s : students) {
             System.out.println(s);
+        }
+    }
+
+    /**
+     * Searches stored students by name (partial, case-insensitive match)
+     * or by exact student ID, depending on what the user enters.
+     */
+    private static void searchStudents() {
+        if (students.isEmpty()) {
+            System.out.println("No students stored yet.");
+            return;
+        }
+
+        System.out.print("Search by ID or name: ");
+        String query = scanner.nextLine().trim();
+
+        ArrayList<Student> matches = new ArrayList<>();
+
+        // If the query is a whole number, treat it as an ID search first.
+        try {
+            int idQuery = Integer.parseInt(query);
+            for (Student s : students) {
+                if (s.getStudentId() == idQuery) {
+                    matches.add(s);
+                }
+            }
+        } catch (NumberFormatException e) {
+            // Not a number -> fall through to name search below.
+        }
+
+        // Also check name matches (covers non-numeric queries).
+        if (matches.isEmpty()) {
+            for (Student s : students) {
+                if (s.getName().toLowerCase().contains(query.toLowerCase())) {
+                    matches.add(s);
+                }
+            }
+        }
+
+        if (matches.isEmpty()) {
+            System.out.println("No student found matching \"" + query + "\".");
+            return;
+        }
+
+        System.out.println("\n--- Search Results (" + matches.size() + ") ---");
+        for (Student s : matches) {
+            System.out.println(s);
+        }
+    }
+
+    /**
+     * Writes all stored students to a CSV file in the project folder so
+     * the data can be opened in Excel or Google Sheets.
+     */
+    private static void exportToCsv() {
+        if (students.isEmpty()) {
+            System.out.println("No students to export yet.");
+            return;
+        }
+
+        String fileName = "students.csv";
+
+        try (PrintWriter writer = new PrintWriter(new FileOutputStream(fileName))) {
+            // Header row
+            writer.println("studentId,name,course,gpa");
+
+            // One line per student
+            for (Student s : students) {
+                writer.println(s.getStudentId() + "," +
+                        s.getName() + "," +
+                        s.getCourse() + "," +
+                        s.getGpa());
+            }
+
+            System.out.println("Exported " + students.size() + " student(s) to " + fileName);
+        } catch (IOException e) {
+            System.out.println("Error writing CSV file: " + e.getMessage());
         }
     }
 
